@@ -51,6 +51,7 @@ public class Request implements Future<String> {
 	private boolean cancelled = false;
 	private boolean done = false;
 	public boolean cancel(boolean mayInterrupt) {
+		connection.disconnect();
 		done = cancelled = true;
 		return true;
 	}

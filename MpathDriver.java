@@ -19,13 +19,11 @@ public class MpathDriver {
 	public enum DecisionPolicy {
 		explore, exploit, sticky, control
 	}
-
 	public class Choice {
 		public String code;
 		public String name;
 		public Map<String, String> meta;
 	}
-	
 	public class Decision {
 		public String session;
 		public DecisionPolicy policy;
@@ -49,6 +47,8 @@ public class MpathDriver {
 		System.out.println(gson.toJson(driver.decide("agent-1", new String[] { "one", "two" })));
 		System.out.println(gson.toJson(driver.decideSimple("agent-1", new String[] { "one", "two" })));
 		System.out.println(gson.toJson(driver.decide("agent-1", "two")));
+		Request r = new Request("http://google.com");
+		System.out.println(r.get());
 	}
 
 	public String ownerCode;
