@@ -40,28 +40,82 @@ public class MpathDriver {
 	Gson gson = new Gson();
 
 	public final static void main(String[] args) throws Exception {
-		String MPATH_URL = Config.get("MPATH_URL", "http://localhost:5000");
+		String MPATH_URL = Config.get("MPATH_URL", "https://api.conductrics.com");
 		System.out.println(MPATH_URL);
-		MpathDriver driver = new MpathDriver("acme");
+		MpathDriver driver = new MpathDriver(MPATH_URL, "acme", "api_1234");
 		Gson gson = new Gson();
-		System.out.println(gson.toJson(driver.decide("agent-1", new String[] { "one", "two" })));
-		System.out.println(gson.toJson(driver.decideSimple("agent-1", new String[] { "one", "two" })));
-		System.out.println(gson.toJson(driver.decide("agent-1", "two")));
-		Request r = new Request("http://google.com");
-		System.out.println(r.get());
+		String session = "1234";
+		System.out.println(gson.toJson(driver.decideSimple(session, "agent-1", new String[] { "one", "two" })));
+		System.out.println(gson.toJson(driver.decide(session, "agent-1", new String[] { "one", "two" })));
+		System.out.println(gson.toJson(driver.decide(session, "agent-1", "point-1")));
 	}
 
 	public String ownerCode;
-	public MpathDriver(String ownerCode) { this.ownerCode = ownerCode; }
+	public String baseUrl;
+	public String apiKey;
+	public MpathDriver(String baseUrl, String ownerCode, String apiKey) {
+		this.ownerCode = ownerCode;
+		this.baseUrl = baseUrl;
+		this.apiKey = apiKey;
+	}
 
-	public SimpleDecision decideSimple(String agentCode, String[] options) {
-		return gson.fromJson("{'session':'pXDnoWjPMLRcWzNU','decision':'b'}", SimpleDecision.class);
+	private String join(String[] ar, String sep) {
+		StringBuilder sb = new StringBuilder();
+		for( int i = 0; i < ar.length; i++) {
+			sb.append(ar[i]);
+			if( i < ar.length - 1 )
+				sb.append(sep);
+		}
+		return sb.toString();
 	}
-	public Decision decide(String agentCode, String[] options) {
-		return gson.fromJson("{'session':'pXDnoWjPMLRcWzNU','policy':'sticky','decisions':{'decision-1':{'code':'b','name':'b'}},'point':'point-1','segment':'(none)','features':{'(none)':1,'jesse':1}}", Decision.class);
+
+	public SimpleDecision decideSimple(String sessionCode, String agentCode, String[] options) throws java.io.IOException {
+		String url = this.baseUrl
+			+ "/" + this.ownerCode
+			+ "/" + agentCode
+			+ "/decision/"
+			+ join(options, ",")
+			+ "?session=" + sessionCode
+			+ "&apikey=" + apiKey;
+		return gson.fromJson(new Request(url).get(), SimpleDecision.class);
 	}
-	public Decision decide(String agentCode, String pointCode) {
-		return gson.fromJson("{'session':'pXDnoWjPMLRcWzNU','policy':'sticky','decisions':{'decision-1':{'code':'b','name':'b'}},'point':'point-1','segment':'(none)','features':{'(none)':1,'jesse':1}}", Decision.class);
+	public Decision decide(String sessionCode, String agentCode, String[] options) throws java.io.IOException {
+		String url = this.baseUrl
+			+ "/" + this.ownerCode
+			+ "/" + agentCode
+			+ "/decisions/"
+			+ join(options, ",")
+			+ "?session=" + sessionCode
+			+ "&apikey=" + apiKey;
+		return gson.fromJson(new Request(url).get(), Decision.class);
+	}
+	public Decision decide(String sessionCode, String agentCode, String pointCode) throws java.io.IOException {
+		String url = this.baseUrl
+			+ "/" + this.ownerCode
+			+ "/" + agentCode
+			+ "/decisions"
+			+ "?point=" + pointCode
+			+ "&session=" + sessionCode
+			+ "&apikey=" + apiKey;
+		return gson.fromJson(new Request(url).get(), Decision.class);
+	}
+	public void reward(String sessionCode, String agentCode, String goalCode) throws java.io.IOException {
+		String url = this.baseUrl
+			+ "/" + this.ownerCode
+			+ "/" + agentCode
+			+ "/goal/" + goalCode
+			+ "?session=" + sessionCode
+			+ "&apikey=" + apiKey;
+		new Request(url); // dont wait for an answer
+	}
+	public void expire(String agentCode, String sessionCode) throws java.io.IOException {
+		String url = this.baseUrl
+			+ "/" + this.ownerCode
+			+ "/" + agentCode
+			+ "/expire"
+			+ "?session=" + sessionCode
+			+ "&apikey=" + apiKey;
+		new Request(url);
 	}
 
 }
